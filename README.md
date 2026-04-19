@@ -1,3 +1,4 @@
+---
 # Obsidian Cipher
 
 A custom 128-bit symmetric block cipher built on a **Substitution-Permutation Network (SPN)** architecture. Designed for STEM Day demonstration of foundational symmetric cryptography 

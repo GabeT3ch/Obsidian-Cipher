@@ -1,5 +1,5 @@
+---
 Plaintext Block (128 bits)
-|
 AddRoundKey(K0) ← initial whitening
 |
 ┌─────▼──────────────────────────────┐
