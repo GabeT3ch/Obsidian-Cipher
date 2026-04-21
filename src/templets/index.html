@@ -1,0 +1,710 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Project Obsidian</title>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:        #070a0d;
+      --surface:   #0d1117;
+      --surface2:  #131c24;
+      --surface3:  #1a2530;
+      --border:    #1e2d3a;
+      --border-hi: #2e4255;
+      --silver:    #8a9dae;
+      --silver-hi: #c4d0da;
+      --steel:     #1e4a5e;
+      --steel-hi:  #2a6a80;
+      --text:      #c8d4dc;
+      --text-dim:  #3d5060;
+      --text-mid:  #607080;
+      --green:     #2a6645;
+      --green-hi:  #3a8a5a;
+      --green-lo:  #0a1f14;
+      --red:       #7a2828;
+      --red-hi:    #a03535;
+      --red-lo:    #1a0808;
+      --radius:    4px;
+      --radius-sm: 3px;
+    }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 0 16px 80px;
+      position: relative;
+      overflow-x: hidden;
+    }
+
+    /* Stone block grid */
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(255,255,255,0.012) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(255,255,255,0.012) 1px, transparent 1px);
+      background-size: 60px 60px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Header ── */
+    header {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 740px;
+      text-align: center;
+      padding: 52px 0 36px;
+    }
+
+    /* Hex shield icon */
+    .shield-wrap {
+      display: inline-block;
+      margin-bottom: 20px;
+      position: relative;
+    }
+
+    .shield-wrap svg {
+      filter: drop-shadow(0 0 18px rgba(46,106,128,0.4));
+    }
+
+    .project-label {
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.35em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      margin-bottom: 6px;
+    }
+
+    h1 {
+      font-size: 3rem;
+      font-weight: 900;
+      letter-spacing: 0.2em;
+      color: var(--silver-hi);
+      text-shadow:
+        0 1px 0 #000,
+        0 0 40px rgba(196,208,218,0.15);
+      line-height: 1;
+      text-transform: uppercase;
+    }
+
+    .subtitle {
+      margin-top: 10px;
+      color: var(--text-dim);
+      font-size: 0.75rem;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    /* ── Session badge ── */
+    #session-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 20px;
+      padding: 6px 16px;
+      border-radius: 2px;
+      font-size: 0.72rem;
+      font-weight: 700;
+      letter-spacing: 0.1em;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+      transition: all 0.4s;
+    }
+
+    #session-badge.active   { background: rgba(42,102,69,0.2); border-color: rgba(58,138,90,0.35); color: var(--green-hi); }
+    #session-badge.inactive { background: rgba(122,40,40,0.2); border-color: rgba(160,53,53,0.35); color: var(--red-hi); }
+
+    .dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    .active .dot { animation: blink 2.5s ease-in-out infinite; }
+    @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.2} }
+
+    /* ── Content ── */
+    .content {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 740px;
+    }
+
+    /* ── Tab bar ── */
+    .tab-bar {
+      display: flex;
+      gap: 2px;
+      background: var(--surface);
+      padding: 4px;
+      border: 1px solid var(--border);
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .tab {
+      flex: 1;
+      padding: 11px 0;
+      border: none;
+      background: transparent;
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      font-weight: 700;
+      cursor: pointer;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      transition: all 0.2s;
+      border-bottom: 2px solid transparent;
+    }
+
+    .tab.active          { color: var(--silver-hi); border-bottom-color: var(--silver); background: var(--surface2); }
+    .tab.decrypt.active  { border-bottom-color: var(--steel-hi); color: #7ab8cc; }
+    .tab:not(.active):hover { color: var(--text-mid); }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-top: none;
+      padding: 32px;
+      display: none;
+      animation: fadeIn 0.18s ease;
+    }
+
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    .card.visible { display: block; }
+
+    .card.encrypt-card { border-top: 2px solid var(--silver); }
+    .card.decrypt-card { border-top: 2px solid var(--steel-hi); }
+
+    /* ── Form fields ── */
+    .field { margin-bottom: 22px; }
+
+    .field-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    label {
+      font-size: 0.68rem;
+      font-weight: 700;
+      letter-spacing: 0.14em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+
+    .char-count {
+      font-size: 0.68rem;
+      color: var(--text-dim);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .input-wrap { position: relative; }
+
+    textarea, input[type="text"], input[type="password"] {
+      width: 100%;
+      background: #040608;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text);
+      font-size: 0.88rem;
+      font-family: inherit;
+      padding: 12px 14px;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      resize: vertical;
+    }
+
+    textarea:focus, input:focus {
+      border-color: var(--silver);
+      box-shadow: 0 0 0 2px rgba(138,157,174,0.1);
+    }
+
+    .decrypt-card textarea:focus, .decrypt-card input:focus {
+      border-color: var(--steel-hi);
+      box-shadow: 0 0 0 2px rgba(42,106,128,0.15);
+    }
+
+    textarea { min-height: 110px; }
+
+    .hex-input {
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+      letter-spacing: 0.03em;
+    }
+
+    input[type="password"], input[type="text"].key-field {
+      padding-right: 44px;
+    }
+
+    .toggle-vis {
+      position: absolute;
+      right: 11px;
+      top: 50%;
+      transform: translateY(-50%);
+      background: none;
+      border: none;
+      color: var(--text-dim);
+      cursor: pointer;
+      padding: 4px;
+      font-size: 0.95rem;
+      line-height: 1;
+      transition: color 0.15s;
+    }
+
+    .toggle-vis:hover { color: var(--silver); }
+
+    /* ── Buttons ── */
+    .btn {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 9px;
+      padding: 13px 28px;
+      border: 1px solid transparent;
+      border-radius: var(--radius-sm);
+      font-size: 0.82rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+      cursor: pointer;
+      transition: all 0.18s;
+      width: 100%;
+    }
+
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-encrypt {
+      background: linear-gradient(180deg, #1e2d3a 0%, #111c24 100%);
+      border-color: var(--silver);
+      color: var(--silver-hi);
+      box-shadow: 0 2px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(196,208,218,0.08);
+    }
+
+    .btn-encrypt:hover:not(:disabled) {
+      background: linear-gradient(180deg, #253545 0%, #17222c 100%);
+      border-color: var(--silver-hi);
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 20px rgba(196,208,218,0.08);
+    }
+
+    .btn-decrypt {
+      background: linear-gradient(180deg, #162535 0%, #0c1820 100%);
+      border-color: var(--steel-hi);
+      color: #7ab8cc;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.5), inset 0 1px 0 rgba(42,106,128,0.1);
+    }
+
+    .btn-decrypt:hover:not(:disabled) {
+      background: linear-gradient(180deg, #1c3040 0%, #101e28 100%);
+      border-color: #3a8aaa;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.6), 0 0 20px rgba(42,106,128,0.12);
+    }
+
+    /* Spinner */
+    .spinner {
+      width: 15px; height: 15px;
+      border: 2px solid rgba(196,208,218,0.2);
+      border-top-color: var(--silver-hi);
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      display: none;
+      flex-shrink: 0;
+    }
+
+    .btn-decrypt .spinner { border-color: rgba(42,106,128,0.2); border-top-color: #7ab8cc; }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    .btn.loading .spinner   { display: block; }
+    .btn.loading .btn-label { display: none; }
+
+    /* ── Result box ── */
+    .result-box {
+      margin-top: 20px;
+      background: #040608;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      padding: 16px 18px;
+      display: none;
+      animation: fadeIn 0.18s ease;
+    }
+
+    .result-box.visible    { display: block; }
+    .result-box.is-error   { border-color: rgba(160,53,53,0.4); background: var(--red-lo); }
+    .result-box.is-success { border-color: rgba(58,138,90,0.3); }
+
+    .result-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+
+    .result-label {
+      font-size: 0.68rem;
+      font-weight: 800;
+      letter-spacing: 0.14em;
+      text-transform: uppercase;
+    }
+
+    .result-label.success { color: var(--green-hi); }
+    .result-label.error   { color: var(--red-hi); }
+
+    .copy-btn {
+      background: var(--surface2);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-sm);
+      color: var(--text-dim);
+      font-size: 0.68rem;
+      font-weight: 700;
+      padding: 4px 10px;
+      cursor: pointer;
+      transition: all 0.15s;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    .copy-btn:hover  { border-color: var(--silver); color: var(--silver-hi); }
+    .copy-btn.copied { border-color: var(--green-hi); color: var(--green-hi); background: var(--green-lo); }
+
+    .result-value {
+      font-family: 'Courier New', monospace;
+      font-size: 0.82rem;
+      color: var(--silver);
+      word-break: break-all;
+      line-height: 1.65;
+      white-space: pre-wrap;
+      max-height: 180px;
+      overflow-y: auto;
+    }
+
+    .result-value.error-text {
+      color: var(--red-hi);
+      font-family: inherit;
+      font-size: 0.86rem;
+    }
+
+    .result-value::-webkit-scrollbar { width: 3px; }
+    .result-value::-webkit-scrollbar-track { background: transparent; }
+    .result-value::-webkit-scrollbar-thumb { background: var(--border-hi); }
+
+    /* ── API note ── */
+    .api-note {
+      margin-top: 14px;
+      font-size: 0.71rem;
+      color: var(--text-dim);
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+      line-height: 1.5;
+    }
+
+    .api-note .chip {
+      background: rgba(46,66,85,0.5);
+      border: 1px solid var(--border-hi);
+      color: var(--silver);
+      padding: 2px 8px;
+      border-radius: 2px;
+      font-size: 0.65rem;
+      font-weight: 700;
+      letter-spacing: 0.08em;
+      white-space: nowrap;
+      flex-shrink: 0;
+      text-transform: uppercase;
+    }
+
+    /* ── Divider ── */
+    .divider {
+      height: 1px;
+      background: var(--border);
+      margin: 0 0 20px;
+    }
+
+    /* ── Footer ── */
+    footer {
+      position: relative;
+      z-index: 1;
+      margin-top: 48px;
+      color: var(--text-dim);
+      font-size: 0.68rem;
+      letter-spacing: 0.1em;
+      text-align: center;
+      text-transform: uppercase;
+    }
+
+    footer strong { color: var(--text-mid); }
+  </style>
+</head>
+<body>
+
+  <header>
+    <!-- Hex shield SVG matching the logo motif -->
+    <div class="shield-wrap">
+      <svg width="64" height="72" viewBox="0 0 64 72" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M32 2L62 18V54L32 70L2 54V18L32 2Z"
+          fill="#0d1117" stroke="#2e4255" stroke-width="1.5"/>
+        <path d="M32 10L54 22V46L32 58L10 46V22L32 10Z"
+          fill="none" stroke="#1e3a4a" stroke-width="1"/>
+        <!-- Padlock body -->
+        <rect x="22" y="34" width="20" height="16" rx="2"
+          fill="#131c24" stroke="#3d5a6a" stroke-width="1.2"/>
+        <!-- Padlock shackle -->
+        <path d="M26 34V28a6 6 0 0112 0v6"
+          fill="none" stroke="#4a7a8a" stroke-width="2" stroke-linecap="round"/>
+        <!-- Keyhole -->
+        <circle cx="32" cy="41" r="2.5" fill="#4a7a8a" opacity="0.8"/>
+        <rect x="31" y="43" width="2" height="4" rx="1" fill="#4a7a8a" opacity="0.8"/>
+      </svg>
+    </div>
+    <p class="project-label">Project</p>
+    <h1>Obsidian</h1>
+    <p class="subtitle">16-Round SPN &nbsp;·&nbsp; 128-bit Block Cipher &nbsp;·&nbsp; Claude-Keyed</p>
+    <div id="session-badge" class="inactive">
+      <div class="dot"></div>
+      <span id="session-text">No session keys</span>
+    </div>
+  </header>
+
+  <div class="content">
+    <div class="tab-bar">
+      <button class="tab encrypt active" onclick="switchTab('encrypt')">&#x1F512; Encrypt</button>
+      <button class="tab decrypt"        onclick="switchTab('decrypt')">&#x1F513; Decrypt</button>
+    </div>
+
+    <!-- Encrypt card -->
+    <div class="card encrypt-card visible" id="encrypt-card">
+      <div class="field">
+        <div class="field-header">
+          <label>Plaintext Message</label>
+          <span class="char-count" id="enc-char-count">0 chars</span>
+        </div>
+        <textarea id="enc-message"
+          placeholder="Enter the message to encrypt…"
+          oninput="updateCount('enc-message','enc-char-count')"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Secret Key</label>
+        <div class="input-wrap">
+          <input type="password" id="enc-key" class="key-field"
+            placeholder="Enter your secret key…" />
+          <button class="toggle-vis" onclick="toggleVis('enc-key',this)"
+            tabindex="-1" aria-label="Toggle key visibility">&#128065;</button>
+        </div>
+      </div>
+
+      <button class="btn btn-encrypt" id="enc-btn" onclick="doEncrypt()">
+        <div class="spinner"></div>
+        <span class="btn-label">&#9889; Encrypt</span>
+      </button>
+
+      <div class="api-note">
+        <span class="chip">1 API call</span>
+        Claude generates fresh S-box &amp; P-box per session — saved locally so decrypt costs nothing.
+      </div>
+
+      <div class="result-box" id="enc-result">
+        <div class="result-header">
+          <span class="result-label success" id="enc-result-label">Ciphertext (Hex)</span>
+          <button class="copy-btn" id="enc-copy"
+            onclick="copyResult('enc-value','enc-copy')">Copy</button>
+        </div>
+        <div class="result-value" id="enc-value"></div>
+      </div>
+    </div>
+
+    <!-- Decrypt card -->
+    <div class="card decrypt-card" id="decrypt-card">
+      <div class="field">
+        <label>Ciphertext (Hex)</label>
+        <textarea class="hex-input" id="dec-ciphertext"
+          placeholder="Paste hex ciphertext here…"></textarea>
+      </div>
+
+      <div class="field">
+        <label>Secret Key</label>
+        <div class="input-wrap">
+          <input type="password" id="dec-key" class="key-field"
+            placeholder="Same key used to encrypt…" />
+          <button class="toggle-vis" onclick="toggleVis('dec-key',this)"
+            tabindex="-1" aria-label="Toggle key visibility">&#128065;</button>
+        </div>
+      </div>
+
+      <button class="btn btn-decrypt" id="dec-btn" onclick="doDecrypt()">
+        <div class="spinner"></div>
+        <span class="btn-label">&#128269; Decrypt</span>
+      </button>
+
+      <div class="result-box" id="dec-result">
+        <div class="result-header">
+          <span class="result-label success" id="dec-result-label">Plaintext</span>
+          <button class="copy-btn" id="dec-copy"
+            onclick="copyResult('dec-value','dec-copy')">Copy</button>
+        </div>
+        <div class="result-value" id="dec-value"></div>
+      </div>
+    </div>
+  </div>
+
+  <footer>
+    Powered by <strong>Anthropic Claude</strong>
+    &nbsp;·&nbsp; Keys stored locally
+    &nbsp;·&nbsp; No external data transmission
+  </footer>
+
+  <script>
+    function switchTab(tab) {
+      document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.card').forEach(c => c.classList.remove('visible'));
+      document.querySelector(`.tab.${tab}`).classList.add('active');
+      document.getElementById(`${tab}-card`).classList.add('visible');
+    }
+
+    function updateCount(textareaId, countId) {
+      const len = document.getElementById(textareaId).value.length;
+      document.getElementById(countId).textContent = `${len} char${len !== 1 ? 's' : ''}`;
+    }
+
+    function toggleVis(inputId, btn) {
+      const el = document.getElementById(inputId);
+      if (el.type === 'password') { el.type = 'text';     btn.textContent = '🙈'; }
+      else                        { el.type = 'password'; btn.textContent = '👁'; }
+    }
+
+    async function copyResult(valueId, btnId) {
+      const text = document.getElementById(valueId).textContent;
+      const btn  = document.getElementById(btnId);
+      try {
+        await navigator.clipboard.writeText(text);
+        btn.textContent = 'Copied ✓';
+        btn.classList.add('copied');
+        setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1800);
+      } catch {
+        btn.textContent = 'Failed';
+        setTimeout(() => { btn.textContent = 'Copy'; }, 1500);
+      }
+    }
+
+    function setLoading(btnId, on) {
+      const btn = document.getElementById(btnId);
+      btn.classList.toggle('loading', on);
+      btn.disabled = on;
+    }
+
+    function showResult(boxId, labelId, copyId, valueId, { success, text }) {
+      const box   = document.getElementById(boxId);
+      const label = document.getElementById(labelId);
+      const copy  = document.getElementById(copyId);
+      const value = document.getElementById(valueId);
+      box.classList.add('visible');
+      box.classList.toggle('is-error',    !success);
+      box.classList.toggle('is-success',   success);
+      label.className        = success ? 'result-label success' : 'result-label error';
+      if (!success) label.textContent = 'Error';
+      value.className        = success ? 'result-value' : 'result-value error-text';
+      copy.style.display     = success ? '' : 'none';
+      value.textContent      = text;
+    }
+
+    async function refreshSessionBadge() {
+      try {
+        const data  = await fetch('/api/session-status').then(r => r.json());
+        const badge = document.getElementById('session-badge');
+        const span  = document.getElementById('session-text');
+        badge.className    = data.has_session ? 'active' : 'inactive';
+        span.textContent   = data.has_session ? 'Session keys active' : 'No session — encrypt first';
+      } catch {}
+    }
+
+    refreshSessionBadge();
+
+    async function doEncrypt() {
+      const message = document.getElementById('enc-message').value.trim();
+      const key     = document.getElementById('enc-key').value.trim();
+      if (!message || !key) {
+        showResult('enc-result','enc-result-label','enc-copy','enc-value',
+          { success: false, text: 'Both message and key are required.' });
+        return;
+      }
+      setLoading('enc-btn', true);
+      document.getElementById('enc-result').classList.remove('visible');
+      try {
+        const res  = await fetch('/api/encrypt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message, key }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('enc-result-label').textContent = 'Ciphertext (Hex)';
+          showResult('enc-result','enc-result-label','enc-copy','enc-value',
+            { success: true, text: data.ciphertext });
+          document.getElementById('dec-ciphertext').value = data.ciphertext;
+          refreshSessionBadge();
+        } else {
+          showResult('enc-result','enc-result-label','enc-copy','enc-value',
+            { success: false, text: data.error });
+        }
+      } catch (err) {
+        showResult('enc-result','enc-result-label','enc-copy','enc-value',
+          { success: false, text: `Network error: ${err.message}` });
+      } finally {
+        setLoading('enc-btn', false);
+      }
+    }
+
+    async function doDecrypt() {
+      const ciphertext = document.getElementById('dec-ciphertext').value.trim();
+      const key        = document.getElementById('dec-key').value.trim();
+      if (!ciphertext || !key) {
+        showResult('dec-result','dec-result-label','dec-copy','dec-value',
+          { success: false, text: 'Both ciphertext and key are required.' });
+        return;
+      }
+      setLoading('dec-btn', true);
+      document.getElementById('dec-result').classList.remove('visible');
+      try {
+        const res  = await fetch('/api/decrypt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ ciphertext, key }),
+        });
+        const data = await res.json();
+        if (data.success) {
+          document.getElementById('dec-result-label').textContent = 'Plaintext';
+          showResult('dec-result','dec-result-label','dec-copy','dec-value',
+            { success: true, text: data.plaintext });
+        } else {
+          showResult('dec-result','dec-result-label','dec-copy','dec-value',
+            { success: false, text: data.error });
+        }
+      } catch (err) {
+        showResult('dec-result','dec-result-label','dec-copy','dec-value',
+          { success: false, text: `Network error: ${err.message}` });
+      } finally {
+        setLoading('dec-btn', false);
+      }
+    }
+
+    document.getElementById('enc-key').addEventListener('keydown', e => { if (e.key === 'Enter') doEncrypt(); });
+    document.getElementById('dec-key').addEventListener('keydown', e => { if (e.key === 'Enter') doDecrypt(); });
+  </script>
+</body>
+</html>
+

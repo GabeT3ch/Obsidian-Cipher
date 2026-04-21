@@ -8,7 +8,7 @@ import threading
 import webbrowser
 
 from dotenv import load_dotenv
-from flask import Flask, jsonify, render_template, request
+from flask import Flask, jsonify, request , send_file
 
 from .api_handler import get_sbox_and_pbox
 from .engine import BLOCK_SIZE, decrypt as spn_decrypt
@@ -39,7 +39,7 @@ def _load_session():
 
 @app.route("/")
 def index():
-    return render_template("index.html")
+    return send_file(os.path.join(_HERE, "templates", "index.html"))
 
 
 @app.route("/api/session-status")
