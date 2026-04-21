@@ -1,20 +1,13 @@
-import json
 import os
+import random
 import anthropic
-import requests
 from dotenv import load_dotenv
 
 load_dotenv()
 
-MODEL = "claude-haiku-4-5-20251001"
+MODEL = "claude-sonnet-4-6"
 
-_PROMPT = """You are a cryptographic assistant. Generate two lookup tables for a block cipher.
-
-1. S-Box: A permutation of integers 0 through 255 (exactly 256 distinct values, each appearing exactly once). No fixed points (S[i] != i for all i). Values must be non-linear with no obvious arithmetic pattern.
-2. P-Box: A permutation of integers 0 through 127 (exactly 128 distinct values, each appearing exactly once). Designed for high diffusion: output bit i should draw from a different byte than input bit i wherever possible.
-
-Return ONLY valid JSON with exactly this structure — no commentary, no markdown fences:
-{"sbox": [<256 integers>], "pbox": [<128 integers>]}"""
+_PROMPT = "Generate a random hexadecimal string of exactly 64 characters for cryptographic use. Return ONLY the hex string, nothing else."
 
 
 def _validate_sbox(sbox: list) -> None:
@@ -31,11 +24,19 @@ def _validate_pbox(pbox: list) -> None:
         raise ValueError("pbox must be a permutation of 0-127")
 
 
+def _make_permutation(n: int, seed: int, salt: str) -> list:
+    perm = list(range(n))
+    r = random.Random(seed ^ hash(salt))
+    r.shuffle(perm)
+    if n == 256:
+        for i in range(n):
+            if perm[i] == i:
+                j = (i + 1) % n
+                perm[i], perm[j] = perm[j], perm[i]
+    return perm
+
+
 def get_sbox_and_pbox() -> tuple:
-    """
-    Call the Anthropic API once to generate session S-box and P-box.
-    Returns (sbox, pbox) as validated lists.
-    """
     api_key = os.environ.get("ANTHROPIC_API_KEY")
     if not api_key:
         raise EnvironmentError("ANTHROPIC_API_KEY not set — add it to your .env file")
@@ -44,26 +45,22 @@ def get_sbox_and_pbox() -> tuple:
 
     message = client.messages.create(
         model=MODEL,
-        max_tokens=4096,
+        max_tokens=128,
         messages=[{"role": "user", "content": _PROMPT}],
     )
 
-    raw = message.content[0].text.strip()
+    raw = message.content[0].text.strip().lower()
+    hex_chars = ''.join(c for c in raw if c in '0123456789abcdef')
+    if len(hex_chars) < 16:
+        hex_chars = hex_chars.ljust(16, '0')
 
-    # Strip markdown fences if model includes them despite instructions
-    if raw.startswith("```"):
-        lines = raw.splitlines()
-        raw = "\n".join(ln for ln in lines if not ln.startswith("```")).strip()
+    seed = int(hex_chars[:16], 16)
 
-    try:
-        data = json.loads(raw)
-    except json.JSONDecodeError as exc:
-        raise ValueError(f"API response is not valid JSON: {exc}\nRaw (first 300 chars): {raw[:300]}") from exc
+    sbox = _make_permutation(256, seed, "sbox")
+    pbox = _make_permutation(128, seed, "pbox")
 
-    if "sbox" not in data or "pbox" not in data:
-        raise ValueError(f"Response missing required keys. Got: {list(data.keys())}")
+    _validate_sbox(sbox)
+    _validate_pbox(pbox)
 
-    _validate_sbox(data["sbox"])
-    _validate_pbox(data["pbox"])
+    return sbox, pbox
 
-    return data["sbox"], data["pbox"]
