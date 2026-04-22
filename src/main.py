@@ -1,7 +1,6 @@
-"""
-Obsidian Cipher — Local Web GUI
-Starts a Flask server at http://localhost:5000 and opens it automatically.
-"""
+
+#Obsidian Cipher — Local Web GUI starts a Flask server at http://localhost:5000 and opens it automatically.
+
 import json
 import os
 import threading

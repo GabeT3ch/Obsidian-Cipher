@@ -6,7 +6,7 @@ NUM_ROUNDS = 16
 
 
 def KeySchedule(key_bytes: bytes, num_rounds: int = NUM_ROUNDS) -> list:
-    """Derive (num_rounds + 1) independent 16-byte subkeys via SHA-256."""
+    #Derive (num_rounds + 1) independent 16-byte subkeys via SHA-256.
     master = hashlib.sha256(key_bytes).digest()
     return [
         hashlib.sha256(master + i.to_bytes(2, "big")).digest()[:16]

@@ -18,7 +18,7 @@ def pkcs7_unpad(data: bytes) -> bytes:
 
 
 def bytes_to_bits(b: bytes) -> list:
-    """Convert bytes to list of 0/1 ints, MSB first per byte."""
+    #Convert bytes to list of 0/1 ints, MSB first per byte.
     bits = []
     for byte in b:
         for i in range(7, -1, -1):
@@ -27,7 +27,7 @@ def bytes_to_bits(b: bytes) -> list:
 
 
 def bits_to_bytes(bits: list) -> bytes:
-    """Convert list of 0/1 ints (MSB first per byte) back to bytes."""
+    #Convert list of 0/1 ints (MSB first per byte) back to bytes.
     if len(bits) % 8 != 0:
         raise ValueError("Bit list length must be a multiple of 8")
     result = []
